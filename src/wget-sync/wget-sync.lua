@@ -1,2 +1,0 @@
-
--- Get a full repository. 
