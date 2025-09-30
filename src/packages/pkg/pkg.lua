@@ -1,7 +1,13 @@
 -- pkg.lua
 local primarySource = "https://raw.githubusercontent.com/colossal-wish/cc-lua-scripts/main/src/"
+local pkgRoot = "/rom/programs/pkg"
 
-local configFile = fs.combine("/", ".pkgdb")
+-- ensure the root folder exists
+if not fs.exists(pkgRoot) then
+	fs.makeDir(pkgRoot)
+end
+
+local configFile = fs.combine(pkgRoot, ".pkgdb")
 local db = fs.exists(configFile) and textutils.unserialize(fs.open(configFile, "r").readAll()) or {}
 
 local function save()
@@ -19,7 +25,6 @@ local function download(url)
 	return content
 end
 
--- Parse version string like "1.0.2" into {1,0,2}
 local function parseVersion(v)
 	local t = {}
 	for num in v:gmatch("%d+") do
@@ -28,7 +33,6 @@ local function parseVersion(v)
 	return t
 end
 
--- Compare versions: returns true if v1 < v2
 local function isOlder(v1, v2)
 	local a, b = parseVersion(v1), parseVersion(v2)
 	for i = 1, math.max(#a, #b) do
@@ -70,21 +74,30 @@ local function installPackage(name, url, visited)
 		return
 	end
 
+	-- prepare folder
+	local pkgDir = fs.combine(pkgRoot, name)
+	if not fs.exists(pkgDir) then
+		fs.makeDir(pkgDir)
+	end
+
 	-- download and save the package
 	print("Installing " .. name .. " v" .. meta.version .. " ...")
 	local pkgData = download(meta.url or url)
-	local f = fs.open(name, "w")
+	local f = fs.open(fs.combine(pkgDir, name .. ".lua"), "w")
 	f.write(pkgData)
 	f.close()
 
 	db[name] = { url = meta.url or url, version = meta.version }
 	save()
-	print("Installed " .. name .. " v" .. meta.version)
+	print("Installed " .. name .. " v" .. meta.version .. " to " .. pkgDir)
 end
 
 local function remove(name)
 	if not db[name] then error("Package not installed: " .. name) end
-	if fs.exists(name) then fs.delete(name) end
+	local pkgDir = fs.combine(pkgRoot, name)
+	if fs.exists(pkgDir) then
+		fs.delete(pkgDir)
+	end
 	db[name] = nil
 	save()
 	print("Removed " .. name)
