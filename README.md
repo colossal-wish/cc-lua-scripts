@@ -1,4 +1,4 @@
-# ComputerCraft Lua Scripts
+# ComputerCraft Lua Utilities, Scripts, & Programs
 
 ## Description
 A compendium of useful ComputerCraft Lua tools.
